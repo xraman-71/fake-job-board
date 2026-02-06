@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Python Job Board - Extended</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00d1b2;
+            --secondary: #3273dc;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .hero {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .job-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .job-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .job-card .card-content {
+            padding: 1.5rem;
+        }
+        
+        .company-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .location-tag {
+            color: #666;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            border-radius: 30px;
+            padding-left: 3rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 209, 178, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .filter-btn {
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.is-active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .stats-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .loading-skeleton {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .modal-card {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .tag {
+            border-radius: 20px;
+            margin-right: 0.5rem;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .apply-btn {
+            background: linear-gradient(135deg, #00d1b2 0%, #00b89c 100%);
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .apply-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 209, 178, 0.4);
+        }
+
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .location-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            color: white;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .location-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .location-count {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00d1b2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <section class="hero is-medium">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <h1 class="title is-1 has-text-white mb-4">
+                    <i class="fab fa-python"></i> Fake Python
+                </h1>
+                <p class="subtitle is-4 has-text-white-bis">
+                    Extended Job Board - Now with 200+ Positions Across All Locations
+                </p>
+                
+                <!-- Stats Bar -->
+                <div class="stats-bar columns is-mobile is-centered mt-5">
+                    <div class="column is-3 stat-item">
+                        <span class="stat-number" id="totalJobs">0</span>
+                        <span>Total Jobs</span>
+                    </div>
+                    <div class="column is-3 stat-item">
+                        <span class="stat-number" id="totalCompanies">0</span>
+                        <span>Companies</span>
+                    </div>
+                    <div class="column is-3 stat-item">
+                        <span class="stat-number" id="totalLocations">0</span>
+                        <span>Locations</span>
+                    </div>
+                    <div class="column is-3 stat-item">
+                        <span class="stat-number" id="pythonJobs">0</span>
+                        <span>Python Jobs</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="section">
+        <div class="container">
+            
+            <!-- Search & Filter Controls -->
+            <div class="glass-panel p-5 mb-5">
+                <div class="columns is-vcentered">
+                    <div class="column is-5">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input class="input is-medium" type="text" id="searchInput" placeholder="Search jobs, companies, or locations...">
+                        </div>
+                    </div>
+                    
+                    <div class="column is-3">
+                        <div class="select is-medium is-fullwidth">
+                            <select id="locationFilter">
+                                <option value="">All Locations</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-4">
+                        <div class="buttons has-addons is-centered">
+                            <button class="button filter-btn is-active" data-filter="all">All</button>
+                            <button class="button filter-btn" data-filter="python">Python</button>
+                            <button class="button filter-btn" data-filter="developer">Developer</button>
+                            <button class="button filter-btn" data-filter="engineer">Engineer</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="columns is-vcentered mt-3">
+                    <div class="column is-6">
+                        <span class="has-text-grey">Sort by:</span>
+                        <div class="buttons has-addons ml-2" style="display: inline-flex;">
+                            <button class="button is-small is-light sort-btn" data-sort="newest">Newest</button>
+                            <button class="button is-small is-light sort-btn" data-sort="company">Company</button>
+                            <button class="button is-small is-light sort-btn" data-sort="title">Title</button>
+                        </div>
+                    </div>
+                    <div class="column is-6 has-text-right">
+                        <span class="tag is-info is-medium" id="resultCount">Showing all jobs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jobs Grid -->
+            <div id="jobsContainer" class="columns is-multiline">
+                <!-- Jobs will be inserted here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state glass-panel" style="display: none;">
+                <i class="fas fa-search"></i>
+                <h3 class="title is-4">No jobs found</h3>
+                <p>Try adjusting your search criteria</p>
+            </div>
+
+            <!-- Pagination -->
+            <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+                <button class="pagination-previous" id="prevPage">Previous</button>
+                <button class="pagination-next" id="nextPage">Next page</button>
+                <ul class="pagination-list" id="paginationList">
+                </ul>
+            </nav>
+
+            <!-- Location Summary -->
+            <div class="mt-6">
+                <h3 class="title is-4 has-text-white mb-4">Jobs by Location</h3>
+                <div id="locationSummary" class="location-grid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Job Details Modal -->
+    <div class="modal" id="jobModal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <p class="modal-card-title has-text-white" id="modalTitle">Job Title</p>
+                <button class="delete" aria-label="close"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="content">
+                    <div class="level">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <figure class="image is-64x64">
+                                    <img class="is-rounded" src="https://files.realpython.com/media/real-python-logo-thumbnail.7f0db70c2ed2.jpg" alt="Company Logo">
+                                </figure>
+                            </div>
+<div class="level-item">
+    <div>
+        <h4 class="title is-5 mb-2" id="modalCompany">Company</h4>
+        <p class="subtitle is-6 mt-1" id="modalLocation">
+            <i class="fas fa-map-marker-alt"></i> Location
+        </p>
+    </div>
+</div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <span class="tag is-primary is-large" id="modalDate">Date</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="title is-5">Job Description</h5>
+                    <p id="modalDescription">
+                        This is a fantastic opportunity to join a leading fake company in the imaginary tech industry. 
+                        You will be working with cutting-edge fake technologies and imaginary frameworks.
+                    </p>
+                    
+                    <h5 class="title is-5 mt-4">Requirements</h5>
+                    <ul id="modalRequirements">
+                        <li>3+ years of fake experience</li>
+                        <li>Strong knowledge of imaginary systems</li>
+                        <li>Ability to work with made-up data</li>
+                        <li>Excellent imaginary communication skills</li>
+                    </ul>
+                </div>
+            </section>
+            <footer class="modal-card-foot" style="justify-content: flex-end;">
+                <button class="button">Close</button>
+                <a href="#" class="button apply-btn" id="modalApply" target="_blank">
+                    <i class="fas fa-external-link-alt mr-2"></i>Apply Now
+                </a>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Original 100 jobs (0-99)
+        const originalJobs = [
+            { id: 0, title: "Senior Python Developer", company: "Payne, Roberts and Davis", location: "Stewartbury, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/senior-python-developer-0.html" },
+            { id: 1, title: "Energy engineer", company: "Vasquez-Davidson", location: "Christopherville, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/energy-engineer-1.html" },
+            { id: 2, title: "Legal executive", company: "Jackson, Chambers and Levy", location: "Port Ericaburgh, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/legal-executive-2.html" },
+            { id: 3, title: "Fitness centre manager", company: "Savage-Bradley", location: "East Seanview, AP", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/fitness-centre-manager-3.html" },
+            { id: 4, title: "Product manager", company: "Ramirez Inc", location: "North Jamieview, AP", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/product-manager-4.html" },
+            { id: 5, title: "Medical technical officer", company: "Rogers-Yates", location: "Davidville, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/medical-technical-officer-5.html" },
+            { id: 6, title: "Physiological scientist", company: "Kramer-Klein", location: "South Christopher, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/physiological-scientist-6.html" },
+            { id: 7, title: "Textile designer", company: "Meyers-Johnson", location: "Port Jonathan, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/textile-designer-7.html" },
+            { id: 8, title: "Television floor manager", company: "Hughes-Williams", location: "Osbornetown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/television-floor-manager-8.html" },
+            { id: 9, title: "Waste management officer", company: "Jones, Williams and Villa", location: "Scotttown, AP", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/waste-management-officer-9.html" },
+            { id: 10, title: "Software Engineer (Python)", company: "Garcia PLC", location: "Ericberg, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/software-engineer-python-10.html" },
+            { id: 11, title: "Interpreter", company: "Gregory and Sons", location: "Ramireztown, AE", date: "2021-04-08", category: "language", url: "https://realpython.github.io/fake-jobs/jobs/interpreter-11.html" },
+            { id: 12, title: "Architect", company: "Clark, Garcia and Sosa", location: "Figueroaview, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/architect-12.html" },
+            { id: 13, title: "Meteorologist", company: "Bush PLC", location: "Kelseystad, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/meteorologist-13.html" },
+            { id: 14, title: "Audiological scientist", company: "Salazar-Meyers", location: "Williamsburgh, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/audiological-scientist-14.html" },
+            { id: 15, title: "English as a second language teacher", company: "Parker, Murphy and Brooks", location: "Mitchellburgh, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/english-as-a-second-language-teacher-15.html" },
+            { id: 16, title: "Surgeon", company: "Cruz-Brown", location: "West Jessicabury, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/surgeon-16.html" },
+            { id: 17, title: "Equities trader", company: "Macdonald-Ferguson", location: "Maloneshire, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/equities-trader-17.html" },
+            { id: 18, title: "Newspaper journalist", company: "Williams, Peterson and Rojas", location: "Johnsonton, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/newspaper-journalist-18.html" },
+            { id: 19, title: "Materials engineer", company: "Smith and Sons", location: "South Davidtown, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/materials-engineer-19.html" },
+            { id: 20, title: "Python Programmer (Entry-Level)", company: "Moss, Duncan and Allen", location: "Port Sara, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-programmer-entry-level-20.html" },
+            { id: 21, title: "Product/process development scientist", company: "Gomez-Carroll", location: "Marktown, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/product-process-development-scientist-21.html" },
+            { id: 22, title: "Scientist, research (maths)", company: "Manning, Welch and Herring", location: "Laurenland, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/scientist-research-maths-22.html" },
+            { id: 23, title: "Ecologist", company: "Lee, Gutierrez and Brown", location: "Lauraton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/ecologist-23.html" },
+            { id: 24, title: "Materials engineer", company: "Davis, Serrano and Cook", location: "South Tammyberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/materials-engineer-24.html" },
+            { id: 25, title: "Historic buildings inspector/conservation officer", company: "Smith LLC", location: "North Brandonville, AP", date: "2021-04-08", category: "conservation", url: "https://realpython.github.io/fake-jobs/jobs/historic-buildings-inspector-conservation-officer-25.html" },
+            { id: 26, title: "Data scientist", company: "Thomas Group", location: "Port Robertfurt, AA", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/data-scientist-26.html" },
+            { id: 27, title: "Psychiatrist", company: "Silva-King", location: "Burnettbury, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/psychiatrist-27.html" },
+            { id: 28, title: "Structural engineer", company: "Pierce-Long", location: "Herbertside, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/structural-engineer-28.html" },
+            { id: 29, title: "Immigration officer", company: "Walker-Simpson", location: "Christopherport, AP", date: "2021-04-08", category: "government", url: "https://realpython.github.io/fake-jobs/jobs/immigration-officer-29.html" },
+            { id: 30, title: "Python Programmer (Entry-Level)", company: "Cooper and Sons", location: "West Victor, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-programmer-entry-level-30.html" },
+            { id: 31, title: "Neurosurgeon", company: "Donovan, Gonzalez and Figueroa", location: "Port Aaron, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/neurosurgeon-31.html" },
+            { id: 32, title: "Broadcast engineer", company: "Morgan, Butler and Bennett", location: "Loribury, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/broadcast-engineer-32.html" },
+            { id: 33, title: "Make", company: "Snyder-Lee", location: "Angelastad, AP", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/make-33.html" },
+            { id: 34, title: "Nurse, adult", company: "Harris PLC", location: "Larrytown, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/nurse-adult-34.html" },
+            { id: 35, title: "Air broker", company: "Washington PLC", location: "West Colin, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/air-broker-35.html" },
+            { id: 36, title: "Editor, film/video", company: "Brown, Price and Campbell", location: "West Stephanie, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/editor-film-video-36.html" },
+            { id: 37, title: "Production assistant, radio", company: "Mcgee PLC", location: "Laurentown, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/production-assistant-radio-37.html" },
+            { id: 38, title: "Engineer, communications", company: "Dixon Inc", location: "Wrightberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/engineer-communications-38.html" },
+            { id: 39, title: "Sales executive", company: "Thompson, Sheppard and Ward", location: "Alberttown, AE", date: "2021-04-08", category: "sales", url: "https://realpython.github.io/fake-jobs/jobs/sales-executive-39.html" },
+            { id: 40, title: "Software Developer (Python)", company: "Adams-Brewer", location: "Brockburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/software-developer-python-40.html" },
+            { id: 41, title: "Futures trader", company: "Schneider-Brady", location: "North Jason, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/futures-trader-41.html" },
+            { id: 42, title: "Tour manager", company: "Gonzales-Frank", location: "Arnoldhaven, AE", date: "2021-04-08", category: "tourism", url: "https://realpython.github.io/fake-jobs/jobs/tour-manager-42.html" },
+            { id: 43, title: "Cytogeneticist", company: "Smith-Wong", location: "Lake Destiny, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/cytogeneticist-43.html" },
+            { id: 44, title: "Designer, multimedia", company: "Pierce-Herrera", location: "South Timothyburgh, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/designer-multimedia-44.html" },
+            { id: 45, title: "Trade union research officer", company: "Aguilar, Rivera and Quinn", location: "New Jimmyton, AE", date: "2021-04-08", category: "research", url: "https://realpython.github.io/fake-jobs/jobs/trade-union-research-officer-45.html" },
+            { id: 46, title: "Chemist, analytical", company: "Lowe, Barnes and Thomas", location: "New Lucasbury, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/chemist-analytical-46.html" },
+            { id: 47, title: "Programmer, multimedia", company: "Lewis, Gonzalez and Vasquez", location: "Port Cory, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/programmer-multimedia-47.html" },
+            { id: 48, title: "Engineer, broadcasting (operations)", company: "Taylor PLC", location: "Gileston, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/engineer-broadcasting-operations-48.html" },
+            { id: 49, title: "Teacher, primary school", company: "Oliver, Jones and Ramirez", location: "Cindyshire, AA", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/teacher-primary-school-49.html" },
+            { id: 50, title: "Python Developer", company: "Rivera and Sons", location: "East Michaelfort, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-developer-50.html" },
+            { id: 51, title: "Manufacturing systems engineer", company: "Garcia PLC", location: "Joybury, AE", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/manufacturing-systems-engineer-51.html" },
+            { id: 52, title: "Producer, television/film/video", company: "Johnson, Wells and Kramer", location: "Emmatown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/producer-television-film-video-52.html" },
+            { id: 53, title: "Scientist, forensic", company: "Gonzalez LLC", location: "Colehaven, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/scientist-forensic-53.html" },
+            { id: 54, title: "Bonds trader", company: "Morgan, White and Macdonald", location: "Port Coryton, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/bonds-trader-54.html" },
+            { id: 55, title: "Editorial assistant", company: "Robinson-Fitzpatrick", location: "Amyborough, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/editorial-assistant-55.html" },
+            { id: 56, title: "Photographer", company: "Waters, Wilson and Hoover", location: "Reynoldsville, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/photographer-56.html" },
+            { id: 57, title: "Retail banker", company: "Hill LLC", location: "Port Billy, AP", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/retail-banker-57.html" },
+            { id: 58, title: "Jewellery designer", company: "Li-Gregory", location: "Adamburgh, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/jewellery-designer-58.html" },
+            { id: 59, title: "Ophthalmologist", company: "Fisher, Ryan and Coleman", location: "Wilsonmouth, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/ophthalmologist-59.html" },
+            { id: 60, title: "Back-End Web Developer (Python, Django)", company: "Stewart-Alexander", location: "South Kimberly, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/back-end-web-developer-python-django-60.html" },
+            { id: 61, title: "Licensed conveyancer", company: "Abbott and Sons", location: "Benjaminland, AP", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/licensed-conveyancer-61.html" },
+            { id: 62, title: "Futures trader", company: "Bryant, Santana and Davenport", location: "Zacharyport, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/futures-trader-62.html" },
+            { id: 63, title: "Counselling psychologist", company: "Smith PLC", location: "Port Devonville, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/counselling-psychologist-63.html" },
+            { id: 64, title: "Insurance underwriter", company: "Patterson-Singh", location: "East Thomas, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/insurance-underwriter-64.html" },
+            { id: 65, title: "Engineer, automotive", company: "Martinez-Berry", location: "New Jeffrey, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/engineer-automotive-65.html" },
+            { id: 66, title: "Producer, radio", company: "May, Taylor and Fisher", location: "Davidside, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/producer-radio-66.html" },
+            { id: 67, title: "Dispensing optician", company: "Bailey, Owen and Thompson", location: "Jamesville, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/dispensing-optician-67.html" },
+            { id: 68, title: "Designer, fashion/clothing", company: "Vasquez Ltd", location: "New Kelly, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/designer-fashion-clothing-68.html" },
+            { id: 69, title: "Chartered loss adjuster", company: "Leblanc LLC", location: "Lake Antonio, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/chartered-loss-adjuster-69.html" },
+            { id: 70, title: "Back-End Web Developer (Python, Django)", company: "Jackson, Ali and Mckee", location: "New Elizabethside, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/back-end-web-developer-python-django-70.html" },
+            { id: 71, title: "Forest/woodland manager", company: "Blankenship, Knight and Powell", location: "Millsbury, AE", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/forest-woodland-manager-71.html" },
+            { id: 72, title: "Clinical cytogeneticist", company: "Patton, Haynes and Jones", location: "Lloydton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/clinical-cytogeneticist-72.html" },
+            { id: 73, title: "Print production planner", company: "Wood Inc", location: "Port Jeremy, AA", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/print-production-planner-73.html" },
+            { id: 74, title: "Systems developer", company: "Collins Group", location: "New Elizabethtown, AA", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/systems-developer-74.html" },
+            { id: 75, title: "Graphic designer", company: "Flores-Nelson", location: "Charlesstad, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/graphic-designer-75.html" },
+            { id: 76, title: "Writer", company: "Mitchell, Jones and Olson", location: "Josephbury, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/writer-76.html" },
+            { id: 77, title: "Field seismologist", company: "Howard Group", location: "Seanfurt, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/field-seismologist-77.html" },
+            { id: 78, title: "Chief Strategy Officer", company: "Kramer-Edwards", location: "Williambury, AA", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/chief-strategy-officer-78.html" },
+            { id: 79, title: "Air cabin crew", company: "Berry-Houston", location: "South Jorgeside, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/air-cabin-crew-79.html" },
+            { id: 80, title: "Python Programmer (Entry-Level)", company: "Mathews Inc", location: "Robertborough, AP", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-programmer-entry-level-80.html" },
+            { id: 81, title: "Warden/ranger", company: "Riley-Johnson", location: "South Saratown, AP", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/warden-ranger-81.html" },
+            { id: 82, title: "Sports therapist", company: "Spencer and Sons", location: "Hullview, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/sports-therapist-82.html" },
+            { id: 83, title: "Arts development officer", company: "Camacho-Sanchez", location: "Philipland, AP", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/arts-development-officer-83.html" },
+            { id: 84, title: "Printmaker", company: "Oliver and Sons", location: "North Patty, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/printmaker-84.html" },
+            { id: 85, title: "Health and safety adviser", company: "Eaton PLC", location: "North Stephen, AE", date: "2021-04-08", category: "safety", url: "https://realpython.github.io/fake-jobs/jobs/health-and-safety-adviser-85.html" },
+            { id: 86, title: "Manufacturing systems engineer", company: "Stanley-Frederick", location: "Stevensland, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/manufacturing-systems-engineer-86.html" },
+            { id: 87, title: "Programmer, applications", company: "Bradley LLC", location: "Reyesstad, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/programmer-applications-87.html" },
+            { id: 88, title: "Medical physicist", company: "Parker, Goodwin and Zavala", location: "Bellberg, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/medical-physicist-88.html" },
+            { id: 89, title: "Media planner", company: "Kim-Miles", location: "North Johnland, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/media-planner-89.html" },
+            { id: 90, title: "Software Developer (Python)", company: "Moreno-Rodriguez", location: "Martinezburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/software-developer-python-90.html" },
+            { id: 91, title: "Surveyor, land/geomatics", company: "Brown-Ortiz", location: "Joshuatown, AE", date: "2021-04-08", category: "surveying", url: "https://realpython.github.io/fake-jobs/jobs/surveyor-land-geomatics-91.html" },
+            { id: 92, title: "Legal executive", company: "Hartman PLC", location: "West Ericstad, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/legal-executive-92.html" },
+            { id: 93, title: "Librarian, academic", company: "Brooks Inc", location: "Tuckertown, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/librarian-academic-93.html" },
+            { id: 94, title: "Barrister", company: "Washington-Castillo", location: "Perezton, AE", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/barrister-94.html" },
+            { id: 95, title: "Museum/gallery exhibitions officer", company: "Nguyen, Yoder and Petty", location: "Lake Abigail, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/museum-gallery-exhibitions-officer-95.html" },
+            { id: 96, title: "Radiographer, diagnostic", company: "Holder LLC", location: "Jacobshire, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/radiographer-diagnostic-96.html" },
+            { id: 97, title: "Database administrator", company: "Yates-Ferguson", location: "Port Susan, AE", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/database-administrator-97.html" },
+            { id: 98, title: "Furniture designer", company: "Ortega-Lawrence", location: "North Tiffany, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/furniture-designer-98.html" },
+            { id: 99, title: "Ship broker", company: "Fuentes, Walls and Castro", location: "Michelleville, AP", date: "2021-04-08", category: "maritime", url: "https://realpython.github.io/fake-jobs/jobs/ship-broker-99.html" }
+        ];
+
+        // Additional jobs starting from ID 100 to ensure minimum 2 jobs per location
+        const additionalJobs = [
+            // Stewartbury, AA - Add 1 more (already has 1)
+            { id: 100, title: "Junior Python Developer", company: "Tech Solutions AA", location: "Stewartbury, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/junior-python-developer-100.html" },
+            
+            // Christopherville, AA - Add 1 more (already has 1)
+            { id: 101, title: "Renewable Energy Consultant", company: "Green Power AA", location: "Christopherville, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/renewable-energy-consultant-101.html" },
+            
+            // Port Ericaburgh, AA - Add 1 more (already has 1)
+            { id: 102, title: "Corporate Lawyer", company: "Legal Eagles AA", location: "Port Ericaburgh, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/corporate-lawyer-102.html" },
+            
+            // East Seanview, AP - Add 1 more (already has 1)
+            { id: 103, title: "Gym Instructor", company: "Fitness First AP", location: "East Seanview, AP", date: "2021-04-08", category: "fitness", url: "https://realpython.github.io/fake-jobs/jobs/gym-instructor-103.html" },
+            
+            // North Jamieview, AP - Add 1 more (already has 1)
+            { id: 104, title: "Associate Product Manager", company: "Product Pro AP", location: "North Jamieview, AP", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/associate-product-manager-104.html" },
+            
+            // Davidville, AP - Add 1 more (already has 1)
+            { id: 105, title: "Lab Technician", company: "MedTech AP", location: "Davidville, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/lab-technician-105.html" },
+            
+            // South Christopher, AE - Add 1 more (already has 1)
+            { id: 106, title: "Research Biologist", company: "BioResearch AE", location: "South Christopher, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/research-biologist-106.html" },
+            
+            // Port Jonathan, AE - Add 1 more (already has 1)
+            { id: 107, title: "Fashion Designer", company: "Style Studio AE", location: "Port Jonathan, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/fashion-designer-107.html" },
+            
+            // Osbornetown, AE - Add 1 more (already has 1)
+            { id: 108, title: "Video Producer", company: "Media Masters AE", location: "Osbornetown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/video-producer-108.html" },
+            
+            // Scotttown, AP - Add 1 more (already has 1)
+            { id: 109, title: "Environmental Officer", company: "Green Earth AP", location: "Scotttown, AP", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/environmental-officer-109.html" },
+            
+            // Ericberg, AE - Add 1 more (already has 1)
+            { id: 110, title: "Full Stack Python Developer", company: "CodeCraft AE", location: "Ericberg, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/full-stack-python-developer-110.html" },
+            
+            // Ramireztown, AE - Add 1 more (already has 1)
+            { id: 111, title: "Language Translator", company: "Global Speak AE", location: "Ramireztown, AE", date: "2021-04-08", category: "language", url: "https://realpython.github.io/fake-jobs/jobs/language-translator-111.html" },
+            
+            // Figueroaview, AA - Add 1 more (already has 1)
+            { id: 112, title: "Interior Architect", company: "Design Hub AA", location: "Figueroaview, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/interior-architect-112.html" },
+            
+            // Kelseystad, AA - Add 1 more (already has 1)
+            { id: 113, title: "Climate Analyst", company: "Weather Wise AA", location: "Kelseystad, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/climate-analyst-113.html" },
+            
+            // Williamsburgh, AE - Add 1 more (already has 1)
+            { id: 114, title: "Hearing Specialist", company: "AudioCare AE", location: "Williamsburgh, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/hearing-specialist-114.html" },
+            
+            // Mitchellburgh, AE - Add 1 more (already has 1)
+            { id: 115, title: "ESL Coordinator", company: "Language Learning AE", location: "Mitchellburgh, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/esl-coordinator-115.html" },
+            
+            // West Jessicabury, AA - Add 1 more (already has 1)
+            { id: 116, title: "General Practitioner", company: "Health First AA", location: "West Jessicabury, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/general-practitioner-116.html" },
+            
+            // Maloneshire, AE - Add 1 more (already has 1)
+            { id: 117, title: "Investment Analyst", company: "Finance Plus AE", location: "Maloneshire, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/investment-analyst-117.html" },
+            
+            // Johnsonton, AA - Add 1 more (already has 1)
+            { id: 118, title: "Content Writer", company: "News Daily AA", location: "Johnsonton, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/content-writer-118.html" },
+            
+            // South Davidtown, AP - Add 1 more (already has 1)
+            { id: 119, title: "Civil Engineer", company: "BuildRight AP", location: "South Davidtown, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/civil-engineer-119.html" },
+            
+            // Port Sara, AE - Add 1 more (already has 1)
+            { id: 120, title: "Python Intern", company: "StartUp AE", location: "Port Sara, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-intern-120.html" },
+            
+            // Marktown, AA - Add 1 more (already has 1)
+            { id: 121, title: "R&D Scientist", company: "Innovation Lab AA", location: "Marktown, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/rd-scientist-121.html" },
+            
+            // Laurenland, AE - Add 1 more (already has 1)
+            { id: 122, title: "Mathematics Researcher", company: "Math Solutions AE", location: "Laurenland, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/mathematics-researcher-122.html" },
+            
+            // Lauraton, AP - Add 1 more (already has 1)
+            { id: 123, title: "Conservation Biologist", company: "Nature First AP", location: "Lauraton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/conservation-biologist-123.html" },
+            
+            // South Tammyberg, AP - Add 1 more (already has 1)
+            { id: 124, title: "Mechanical Engineer", company: "Mechanical Pro AP", location: "South Tammyberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/mechanical-engineer-124.html" },
+            
+            // North Brandonville, AP - Add 1 more (already has 1)
+            { id: 125, title: "Heritage Consultant", company: "History Matters AP", location: "North Brandonville, AP", date: "2021-04-08", category: "conservation", url: "https://realpython.github.io/fake-jobs/jobs/heritage-consultant-125.html" },
+            
+            // Port Robertfurt, AA - Add 1 more (already has 1)
+            { id: 126, title: "Machine Learning Engineer", company: "AI Solutions AA", location: "Port Robertfurt, AA", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/machine-learning-engineer-126.html" },
+            
+            // Burnettbury, AE - Add 1 more (already has 1)
+            { id: 127, title: "Mental Health Counselor", company: "MindCare AE", location: "Burnettbury, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/mental-health-counselor-127.html" },
+            
+            // Herbertside, AA - Add 1 more (already has 1)
+            { id: 128, title: "Bridge Engineer", company: "Structure Pro AA", location: "Herbertside, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/bridge-engineer-128.html" },
+            
+            // Christopherport, AP - Add 1 more (already has 1)
+            { id: 129, title: "Border Control Agent", company: "Security First AP", location: "Christopherport, AP", date: "2021-04-08", category: "government", url: "https://realpython.github.io/fake-jobs/jobs/border-control-agent-129.html" },
+            
+            // West Victor, AE - Add 1 more (already has 1)
+            { id: 130, title: "Junior Software Developer", company: "Code Academy AE", location: "West Victor, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/junior-software-developer-130.html" },
+            
+            // Port Aaron, AP - Add 1 more (already has 1)
+            { id: 131, title: "Brain Surgeon", company: "NeuroCare AP", location: "Port Aaron, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/brain-surgeon-131.html" },
+            
+            // Loribury, AA - Add 1 more (already has 1)
+            { id: 132, title: "Audio Engineer", company: "Sound Pro AA", location: "Loribury, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/audio-engineer-132.html" },
+            
+            // Angelastad, AP - Add 1 more (already has 1)
+            { id: 133, title: "Production Manager", company: "Manufacture Pro AP", location: "Angelastad, AP", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/production-manager-133.html" },
+            
+            // Larrytown, AE - Add 1 more (already has 1)
+            { id: 134, title: "Pediatric Nurse", company: "Kids Care AE", location: "Larrytown, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/pediatric-nurse-134.html" },
+            
+            // West Colin, AP - Add 1 more (already has 1)
+            { id: 135, title: "Logistics Coordinator", company: "Air Freight AP", location: "West Colin, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/logistics-coordinator-135.html" },
+            
+            // West Stephanie, AP - Add 1 more (already has 1)
+            { id: 136, title: "Video Editor", company: "Post Production AP", location: "West Stephanie, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/video-editor-136.html" },
+            
+            // Laurentown, AP - Add 1 more (already has 1)
+            { id: 137, title: "Radio Host", company: "Broadcast AP", location: "Laurentown, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/radio-host-137.html" },
+            
+            // Wrightberg, AP - Add 1 more (already has 1)
+            { id: 138, title: "Network Engineer", company: "Connect AP", location: "Wrightberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/network-engineer-138.html" },
+            
+            // Alberttown, AE - Add 1 more (already has 1)
+            { id: 139, title: "Account Executive", company: "Sales Pro AE", location: "Alberttown, AE", date: "2021-04-08", category: "sales", url: "https://realpython.github.io/fake-jobs/jobs/account-executive-139.html" },
+            
+            // Brockburgh, AE - Add 1 more (already has 1)
+            { id: 140, title: "Python Data Engineer", company: "DataFlow AE", location: "Brockburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-data-engineer-140.html" },
+            
+            // North Jason, AE - Add 1 more (already has 1)
+            { id: 141, title: "Stock Trader", company: "TradeMax AE", location: "North Jason, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/stock-trader-141.html" },
+            
+            // Arnoldhaven, AE - Add 1 more (already has 1)
+            { id: 142, title: "Travel Coordinator", company: "Wanderlust AE", location: "Arnoldhaven, AE", date: "2021-04-08", category: "tourism", url: "https://realpython.github.io/fake-jobs/jobs/travel-coordinator-142.html" },
+            
+            // Lake Destiny, AP - Add 1 more (already has 1)
+            { id: 143, title: "Genetic Counselor", company: "GeneTech AP", location: "Lake Destiny, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/genetic-counselor-143.html" },
+            
+            // South Timothyburgh, AP - Add 1 more (already has 1)
+            { id: 144, title: "UI/UX Designer", company: "Design Thinking AP", location: "South Timothyburgh, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/ui-ux-designer-144.html" },
+            
+            // New Jimmyton, AE - Add 1 more (already has 1)
+            { id: 145, title: "Policy Researcher", company: "Think Tank AE", location: "New Jimmyton, AE", date: "2021-04-08", category: "research", url: "https://realpython.github.io/fake-jobs/jobs/policy-researcher-145.html" },
+            
+            // New Lucasbury, AP - Add 1 more (already has 1)
+            { id: 146, title: "Lab Chemist", company: "ChemWorks AP", location: "New Lucasbury, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/lab-chemist-146.html" },
+            
+            // Port Cory, AE - Add 1 more (already has 1)
+            { id: 147, title: "Creative Developer", company: "Interactive AE", location: "Port Cory, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/creative-developer-147.html" },
+            
+            // Gileston, AA - Add 1 more (already has 1)
+            { id: 148, title: "Transmission Engineer", company: "Signal Pro AA", location: "Gileston, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/transmission-engineer-148.html" },
+            
+            // Cindyshire, AA - Add 1 more (already has 1)
+            { id: 149, title: "Elementary Teacher", company: "Future Minds AA", location: "Cindyshire, AA", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/elementary-teacher-149.html" },
+            
+            // East Michaelfort, AA - Add 1 more (already has 1)
+            { id: 150, title: "Senior Backend Developer", company: "ServerSide AA", location: "East Michaelfort, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/senior-backend-developer-150.html" },
+            
+            // Joybury, AE - Add 1 more (already has 1)
+            { id: 151, title: "Process Engineer", company: "Optimize AE", location: "Joybury, AE", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/process-engineer-151.html" },
+            
+            // Emmatown, AE - Add 1 more (already has 1)
+            { id: 152, title: "Documentary Producer", company: "True Story AE", location: "Emmatown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/documentary-producer-152.html" },
+            
+            // Colehaven, AP - Add 1 more (already has 1)
+            { id: 153, title: "Crime Scene Investigator", company: "Justice AP", location: "Colehaven, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/crime-scene-investigator-153.html" },
+            
+            // Port Coryton, AE - Add 1 more (already has 1)
+            { id: 154, title: "Portfolio Manager", company: "Wealth Management AE", location: "Port Coryton, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/portfolio-manager-154.html" },
+            
+            // Amyborough, AA - Add 1 more (already has 1)
+            { id: 155, title: "Copy Editor", company: "Perfect Text AA", location: "Amyborough, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/copy-editor-155.html" },
+            
+            // Reynoldsville, AA - Add 1 more (already has 1)
+            { id: 156, title: "Portrait Photographer", company: "Picture Perfect AA", location: "Reynoldsville, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/portrait-photographer-156.html" },
+            
+            // Port Billy, AP - Add 1 more (already has 1)
+            { id: 157, title: "Loan Officer", company: "Quick Loans AP", location: "Port Billy, AP", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/loan-officer-157.html" },
+            
+            // Adamburgh, AA - Add 1 more (already has 1)
+            { id: 158, title: "Accessory Designer", company: "Style Craft AA", location: "Adamburgh, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/accessory-designer-158.html" },
+            
+            // Wilsonmouth, AA - Add 1 more (already has 1)
+            { id: 159, title: "Retinal Specialist", company: "Vision Care AA", location: "Wilsonmouth, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/retinal-specialist-159.html" },
+            
+            // South Kimberly, AA - Add 1 more (already has 1)
+            { id: 160, title: "Django Developer", company: "Web Framework AA", location: "South Kimberly, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/django-developer-160.html" },
+            
+            // Benjaminland, AP - Add 1 more (already has 1)
+            { id: 161, title: "Property Lawyer", company: "Real Estate Legal AP", location: "Benjaminland, AP", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/property-lawyer-161.html" },
+            
+            // Zacharyport, AA - Add 1 more (already has 1)
+            { id: 162, title: "Commodities Broker", company: "Trade Hub AA", location: "Zacharyport, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/commodities-broker-162.html" },
+            
+            // Port Devonville, AE - Add 1 more (already has 1)
+            { id: 163, title: "Child Psychologist", company: "Young Minds AE", location: "Port Devonville, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/child-psychologist-163.html" },
+            
+            // East Thomas, AE - Add 1 more (already has 1)
+            { id: 164, title: "Risk Assessor", company: "Safe Bet AE", location: "East Thomas, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/risk-assessor-164.html" },
+            
+            // New Jeffrey, AP - Add 1 more (already has 1)
+            { id: 165, title: "Vehicle Designer", company: "Auto Design AP", location: "New Jeffrey, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/vehicle-designer-165.html" },
+            
+            // Davidside, AA - Add 1 more (already has 1)
+            { id: 166, title: "Podcast Producer", company: "Audio First AA", location: "Davidside, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/podcast-producer-166.html" },
+            
+            // Jamesville, AA - Add 1 more (already has 1)
+            { id: 167, title: "Vision Therapist", company: "Eye Care AA", location: "Jamesville, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/vision-therapist-167.html" },
+            
+            // New Kelly, AP - Add 1 more (already has 1)
+            { id: 168, title: "Apparel Designer", company: "Fashion Forward AP", location: "New Kelly, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/apparel-designer-168.html" },
+            
+            // Lake Antonio, AA - Add 1 more (already has 1)
+            { id: 169, title: "Claims Adjuster", company: "Insurance Pro AA", location: "Lake Antonio, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/claims-adjuster-169.html" },
+            
+            // New Elizabethside, AA - Add 1 more (already has 1)
+            { id: 170, title: "API Developer", company: "Interface AA", location: "New Elizabethside, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/api-developer-170.html" },
+            
+            // Millsbury, AE - Add 1 more (already has 1)
+            { id: 171, title: "Park Ranger", company: "National Parks AE", location: "Millsbury, AE", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/park-ranger-171.html" },
+            
+            // Lloydton, AP - Add 1 more (already has 1)
+            { id: 172, title: "Geneticist", company: "DNA Research AP", location: "Lloydton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/geneticist-172.html" },
+            
+            // Port Jeremy, AA - Add 1 more (already has 1)
+            { id: 173, title: "Print Manager", company: "Press Pro AA", location: "Port Jeremy, AA", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/print-manager-173.html" },
+            
+            // New Elizabethtown, AA - Add 1 more (already has 1)
+            { id: 174, title: "System Architect", company: "Infrastructure AA", location: "New Elizabethtown, AA", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/system-architect-174.html" },
+            
+            // Charlesstad, AE - Add 1 more (already has 1)
+            { id: 175, title: "Brand Designer", company: "Identity AE", location: "Charlesstad, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/brand-designer-175.html" },
+            
+            // Josephbury, AE - Add 1 more (already has 1)
+            { id: 176, title: "Technical Writer", company: "Docs AE", location: "Josephbury, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/technical-writer-176.html" },
+            
+            // Seanfurt, AA - Add 1 more (already has 1)
+            { id: 177, title: "Geophysicist", company: "Earth Science AA", location: "Seanfurt, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/geophysicist-177.html" },
+            
+            // Williambury, AA - Add 1 more (already has 1)
+            { id: 178, title: "Business Strategist", company: "Consult Pro AA", location: "Williambury, AA", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/business-strategist-178.html" },
+            
+            // South Jorgeside, AP - Add 1 more (already has 1)
+            { id: 179, title: "Flight Attendant", company: "Sky High AP", location: "South Jorgeside, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/flight-attendant-179.html" },
+            
+            // Robertborough, AP - Add 1 more (already has 1)
+            { id: 180, title: "Coding Bootcamp Graduate", company: "New Devs AP", location: "Robertborough, AP", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/coding-bootcamp-graduate-180.html" },
+            
+            // South Saratown, AP - Add 1 more (already has 1)
+            { id: 181, title: "Wildlife Conservationist", company: "Wildlife First AP", location: "South Saratown, AP", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/wildlife-conservationist-181.html" },
+            
+            // Hullview, AA - Add 1 more (already has 1)
+            { id: 182, title: "Physical Therapist", company: "Rehab Pro AA", location: "Hullview, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/physical-therapist-182.html" },
+            
+            // Philipland, AP - Add 1 more (already has 1)
+            { id: 183, title: "Gallery Curator", company: "Art Space AP", location: "Philipland, AP", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/gallery-curator-183.html" },
+            
+            // North Patty, AE - Add 1 more (already has 1)
+            { id: 184, title: "Screen Printer", company: "Print Studio AE", location: "North Patty, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/screen-printer-184.html" },
+            
+            // North Stephen, AE - Add 1 more (already has 1)
+            { id: 185, title: "Safety Inspector", company: "OSHA Pro AE", location: "North Stephen, AE", date: "2021-04-08", category: "safety", url: "https://realpython.github.io/fake-jobs/jobs/safety-inspector-185.html" },
+            
+            // Stevensland, AP - Add 1 more (already has 1)
+            { id: 186, title: "Lean Manufacturing Specialist", company: "Efficiency AP", location: "Stevensland, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/lean-manufacturing-specialist-186.html" },
+            
+            // Reyesstad, AE - Add 1 more (already has 1)
+            { id: 187, title: "Software Engineer", company: "CodeBase AE", location: "Reyesstad, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/software-engineer-187.html" },
+            
+            // Bellberg, AP - Add 1 more (already has 1)
+            { id: 188, title: "Radiation Therapist", company: "Cancer Care AP", location: "Bellberg, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/radiation-therapist-188.html" },
+            
+            // North Johnland, AE - Add 1 more (already has 1)
+            { id: 189, title: "Advertising Planner", company: "Media Buy AE", location: "North Johnland, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/advertising-planner-189.html" },
+            
+            // Martinezburgh, AE - Add 1 more (already has 1)
+            { id: 190, title: "Senior Python Architect", company: "PyExperts AE", location: "Martinezburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/senior-python-architect-190.html" },
+            
+            // Joshuatown, AE - Add 1 more (already has 1)
+            { id: 191, title: "Land Surveyor", company: "Survey Pro AE", location: "Joshuatown, AE", date: "2021-04-08", category: "surveying", url: "https://realpython.github.io/fake-jobs/jobs/land-surveyor-191.html" },
+            
+            // West Ericstad, AA - Add 1 more (already has 1)
+            { id: 192, title: "Compliance Officer", company: "Legal Check AA", location: "West Ericstad, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/compliance-officer-192.html" },
+            
+            // Tuckertown, AE - Add 1 more (already has 1)
+            { id: 193, title: "Research Librarian", company: "Knowledge Base AE", location: "Tuckertown, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/research-librarian-193.html" },
+            
+            // Perezton, AE - Add 1 more (already has 1)
+            { id: 194, title: "Trial Lawyer", company: "Court Pro AE", location: "Perezton, AE", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/trial-lawyer-194.html" },
+            
+            // Lake Abigail, AE - Add 1 more (already has 1)
+            { id: 195, title: "Exhibition Designer", company: "Show Case AE", location: "Lake Abigail, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/exhibition-designer-195.html" },
+            
+            // Jacobshire, AP - Add 1 more (already has 1)
+            { id: 196, title: "MRI Technician", company: "Imaging Pro AP", location: "Jacobshire, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/mri-technician-196.html" },
+            
+            // Port Susan, AE - Add 1 more (already has 1)
+            { id: 197, title: "SQL Database Admin", company: "DataGuard AE", location: "Port Susan, AE", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/sql-database-admin-197.html" },
+            
+            // North Tiffany, AA - Add 1 more (already has 1)
+            { id: 198, title: "Interior Designer", company: "Space Design AA", location: "North Tiffany, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/interior-designer-198.html" },
+            
+            // Michelleville, AP - Add 1 more (already has 1)
+            { id: 199, title: "Maritime Logistics Coordinator", company: "Ocean Freight AP", location: "Michelleville, AP", date: "2021-04-08", category: "maritime", url: "https://realpython.github.io/fake-jobs/jobs/maritime-logistics-coordinator-199.html" },
+            
+            // Additional jobs to reach 200 total and ensure all locations have 2+
+            
+            // Bonus jobs for locations that only had 1 (ensuring 2+ per location)
+            { id: 200, title: "Data Analyst", company: "Analytics Pro", location: "Stewartbury, AA", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/data-analyst-200.html" },
+            { id: 201, title: "Solar Panel Technician", company: "SolarTech", location: "Christopherville, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/solar-panel-technician-201.html" },
+            { id: 202, title: "Paralegal", company: "Legal Support", location: "Port Ericaburgh, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/paralegal-202.html" },
+            { id: 203, title: "Personal Trainer", company: "FitLife", location: "East Seanview, AP", date: "2021-04-08", category: "fitness", url: "https://realpython.github.io/fake-jobs/jobs/personal-trainer-203.html" },
+            { id: 204, title: "Junior Product Manager", company: "ProductLab", location: "North Jamieview, AP", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/junior-product-manager-204.html" },
+            { id: 205, title: "X-Ray Technician", company: "Radiology Plus", location: "Davidville, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/x-ray-technician-205.html" },
+            { id: 206, title: "Marine Biologist", company: "Ocean Research", location: "South Christopher, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/marine-biologist-206.html" },
+            { id: 207, title: "Interior Stylist", company: "Chic Spaces", location: "Port Jonathan, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/interior-stylist-207.html" },
+            { id: 208, title: "Content Creator", company: "Digital Media", location: "Osbornetown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/content-creator-208.html" },
+            { id: 209, title: "Recycling Coordinator", company: "EcoFriendly", location: "Scotttown, AP", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/recycling-coordinator-209.html" },
+            { id: 210, title: "DevOps Engineer", company: "CloudOps", location: "Ericberg, AE", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/devops-engineer-210.html" },
+            { id: 211, title: "Localization Specialist", company: "Global Reach", location: "Ramireztown, AE", date: "2021-04-08", category: "language", url: "https://realpython.github.io/fake-jobs/jobs/localization-specialist-211.html" },
+            { id: 212, title: "Urban Planner", company: "City Design", location: "Figueroaview, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/urban-planner-212.html" },
+            { id: 213, title: "Storm Chaser", company: "Extreme Weather", location: "Kelseystad, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/storm-chaser-213.html" },
+            { id: 214, title: "Cochlear Implant Specialist", company: "Hearing Solutions", location: "Williamsburgh, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/cochlear-implant-specialist-214.html" },
+            { id: 215, title: "Curriculum Developer", company: "Education First", location: "Mitchellburgh, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/curriculum-developer-215.html" },
+            { id: 216, title: "Cardiac Surgeon", company: "Heart Care", location: "West Jessicabury, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/cardiac-surgeon-216.html" },
+            { id: 217, title: "Hedge Fund Manager", company: "Wealth Advisors", location: "Maloneshire, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/hedge-fund-manager-217.html" },
+            { id: 218, title: "Social Media Manager", company: "Digital Buzz", location: "Johnsonton, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/social-media-manager-218.html" },
+            { id: 219, title: "Structural Analyst", company: "BuildSafe", location: "South Davidtown, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/structural-analyst-219.html" },
+            { id: 220, title: "Python Mentor", company: "CodeCamp", location: "Port Sara, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-mentor-220.html" },
+            { id: 221, title: "Lab Manager", company: "Research Hub", location: "Marktown, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/lab-manager-221.html" },
+            { id: 222, title: "Statistician", company: "Data Science Pro", location: "Laurenland, AE", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/statistician-222.html" },
+            { id: 223, title: "Wildlife Biologist", company: "Nature Conservancy", location: "Lauraton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/wildlife-biologist-223.html" },
+            { id: 224, title: "Quality Engineer", company: "Quality First", location: "South Tammyberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/quality-engineer-224.html" },
+            { id: 225, title: "Restoration Specialist", company: "Historic Preserves", location: "North Brandonville, AP", date: "2021-04-08", category: "conservation", url: "https://realpython.github.io/fake-jobs/jobs/restoration-specialist-225.html" },
+            { id: 226, title: "AI Researcher", company: "Future Tech", location: "Port Robertfurt, AA", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/ai-researcher-226.html" },
+            { id: 227, title: "Behavioral Therapist", company: "Mind Wellness", location: "Burnettbury, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/behavioral-therapist-227.html" },
+            { id: 228, title: "Foundation Engineer", company: "Ground Works", location: "Herbertside, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/foundation-engineer-228.html" },
+            { id: 229, title: "Customs Officer", company: "Border Security", location: "Christopherport, AP", date: "2021-04-08", category: "government", url: "https://realpython.github.io/fake-jobs/jobs/customs-officer-229.html" },
+            { id: 230, title: "Frontend Developer", company: "Web Design Pro", location: "West Victor, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/frontend-developer-230.html" },
+            { id: 231, title: "Spinal Surgeon", company: "Ortho Care", location: "Port Aaron, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/spinal-surgeon-231.html" },
+            { id: 232, title: "Sound Engineer", company: "Audio Masters", location: "Loribury, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/sound-engineer-232.html" },
+            { id: 233, title: "Factory Supervisor", company: "Manufacturing Plus", location: "Angelastad, AP", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/factory-supervisor-233.html" },
+            { id: 234, title: "ICU Nurse", company: "Critical Care", location: "Larrytown, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/icu-nurse-234.html" },
+            { id: 235, title: "Cargo Coordinator", company: "Freight Masters", location: "West Colin, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/cargo-coordinator-235.html" },
+            { id: 236, title: "Motion Graphics Artist", company: "Visual Effects", location: "West Stephanie, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/motion-graphics-artist-236.html" },
+            { id: 237, title: "Broadcast Journalist", company: "News Network", location: "Laurentown, AP", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/broadcast-journalist-237.html" },
+            { id: 238, title: "Telecom Engineer", company: "Connect World", location: "Wrightberg, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/telecom-engineer-238.html" },
+            { id: 239, title: "Sales Director", company: "Revenue Pro", location: "Alberttown, AE", date: "2021-04-08", category: "sales", url: "https://realpython.github.io/fake-jobs/jobs/sales-director-239.html" },
+            { id: 240, title: "Python Automation Engineer", company: "AutoScript", location: "Brockburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-automation-engineer-240.html" },
+            { id: 241, title: "Day Trader", company: "Fast Trades", location: "North Jason, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/day-trader-241.html" },
+            { id: 242, title: "Cruise Director", company: "Ocean Tours", location: "Arnoldhaven, AE", date: "2021-04-08", category: "tourism", url: "https://realpython.github.io/fake-jobs/jobs/cruise-director-242.html" },
+            { id: 243, title: "DNA Analyst", company: "Genetic Testing", location: "Lake Destiny, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/dna-analyst-243.html" },
+            { id: 244, title: "Web Designer", company: "Pixel Perfect", location: "South Timothyburgh, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/web-designer-244.html" },
+            { id: 245, title: "Economic Analyst", company: "Policy Institute", location: "New Jimmyton, AE", date: "2021-04-08", category: "research", url: "https://realpython.github.io/fake-jobs/jobs/economic-analyst-245.html" },
+            { id: 246, title: "Pharmaceutical Chemist", company: "Drug Research", location: "New Lucasbury, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/pharmaceutical-chemist-246.html" },
+            { id: 247, title: "Game Developer", company: "Play Studio", location: "Port Cory, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/game-developer-247.html" },
+            { id: 248, title: "Satellite Engineer", company: "Space Tech", location: "Gileston, AA", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/satellite-engineer-248.html" },
+            { id: 249, title: "Kindergarten Teacher", company: "Early Learning", location: "Cindyshire, AA", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/kindergarten-teacher-249.html" },
+            { id: 250, title: "Cloud Python Developer", company: "SkyCode", location: "East Michaelfort, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/cloud-python-developer-250.html" },
+            { id: 251, title: "Industrial Engineer", company: "Process Optimize", location: "Joybury, AE", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/industrial-engineer-251.html" },
+            { id: 252, title: "Cinematographer", company: "Film Vision", location: "Emmatown, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/cinematographer-252.html" },
+            { id: 253, title: "Toxicologist", company: "Poison Control", location: "Colehaven, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/toxicologist-253.html" },
+            { id: 254, title: "Treasury Analyst", company: "Bank Corp", location: "Port Coryton, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/treasury-analyst-254.html" },
+            { id: 255, title: "Managing Editor", company: "Publishing House", location: "Amyborough, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/managing-editor-255.html" },
+            { id: 256, title: "Wedding Photographer", company: "Love Stories", location: "Reynoldsville, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/wedding-photographer-256.html" },
+            { id: 257, title: "Branch Manager", company: "Community Bank", location: "Port Billy, AP", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/branch-manager-257.html" },
+            { id: 258, title: "Gemologist", company: "Precious Stones", location: "Adamburgh, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/gemologist-258.html" },
+            { id: 259, title: "Optometrist", company: "Eye Care Pro", location: "Wilsonmouth, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/optometrist-259.html" },
+            { id: 260, title: "Flask Developer", company: "Web Micro", location: "South Kimberly, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/flask-developer-260.html" },
+            { id: 261, title: "Real Estate Attorney", company: "Property Law", location: "Benjaminland, AP", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/real-estate-attorney-261.html" },
+            { id: 262, title: "Derivatives Trader", company: "Complex Trades", location: "Zacharyport, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/derivatives-trader-262.html" },
+            { id: 263, title: "School Counselor", company: "Student Support", location: "Port Devonville, AE", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/school-counselor-263.html" },
+            { id: 264, title: "Actuary", company: "Risk Math", location: "East Thomas, AE", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/actuary-264.html" },
+            { id: 265, title: "Powertrain Engineer", company: "Drive Systems", location: "New Jeffrey, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/powertrain-engineer-265.html" },
+            { id: 266, title: "Audio Book Narrator", company: "Story Tellers", location: "Davidside, AA", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/audio-book-narrator-266.html" },
+            { id: 267, title: "Contact Lens Specialist", company: "Lens Pro", location: "Jamesville, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/contact-lens-specialist-267.html" },
+            { id: 268, title: "Costume Designer", company: "Theater Arts", location: "New Kelly, AP", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/costume-designer-268.html" },
+            { id: 269, title: "Fraud Investigator", company: "Detect Pro", location: "Lake Antonio, AA", date: "2021-04-08", category: "finance", url: "https://realpython.github.io/fake-jobs/jobs/fraud-investigator-269.html" },
+            { id: 270, title: "FastAPI Developer", company: "Speed API", location: "New Elizabethside, AA", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/fastapi-developer-270.html" },
+            { id: 271, title: "Forestry Technician", company: "Timber Pro", location: "Millsbury, AE", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/forestry-technician-271.html" },
+            { id: 272, title: "Molecular Biologist", company: "Cell Research", location: "Lloydton, AP", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/molecular-biologist-272.html" },
+            { id: 273, title: "Digital Printer", company: "Modern Press", location: "Port Jeremy, AA", date: "2021-04-08", category: "manufacturing", url: "https://realpython.github.io/fake-jobs/jobs/digital-printer-273.html" },
+            { id: 274, title: "Solutions Architect", company: "Enterprise Systems", location: "New Elizabethtown, AA", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/solutions-architect-274.html" },
+            { id: 275, title: "Visual Designer", company: "Creative Eye", location: "Charlesstad, AE", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/visual-designer-275.html" },
+            { id: 276, title: "Grant Writer", company: "Funding Pro", location: "Josephbury, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/grant-writer-276.html" },
+            { id: 277, title: "Seismology Technician", company: "Earthquake Monitor", location: "Seanfurt, AA", date: "2021-04-08", category: "science", url: "https://realpython.github.io/fake-jobs/jobs/seismology-technician-277.html" },
+            { id: 278, title: "Operations Director", company: "Business Ops", location: "Williambury, AA", date: "2021-04-08", category: "management", url: "https://realpython.github.io/fake-jobs/jobs/operations-director-278.html" },
+            { id: 279, title: "Ground Crew", company: "Airport Services", location: "South Jorgeside, AP", date: "2021-04-08", category: "aviation", url: "https://realpython.github.io/fake-jobs/jobs/ground-crew-279.html" },
+            { id: 280, title: "Junior Coder", company: "Code School", location: "Robertborough, AP", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/junior-coder-280.html" },
+            { id: 281, title: "Game Warden", company: "Wildlife Protection", location: "South Saratown, AP", date: "2021-04-08", category: "environment", url: "https://realpython.github.io/fake-jobs/jobs/game-warden-281.html" },
+            { id: 282, title: "Athletic Trainer", company: "Sports Med", location: "Hullview, AA", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/athletic-trainer-282.html" },
+            { id: 283, title: "Theater Director", company: "Stage Craft", location: "Philipland, AP", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/theater-director-283.html" },
+            { id: 284, title: "Lithographer", company: "Fine Prints", location: "North Patty, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/lithographer-284.html" },
+            { id: 285, title: "Risk Manager", company: "Safety First", location: "North Stephen, AE", date: "2021-04-08", category: "safety", url: "https://realpython.github.io/fake-jobs/jobs/risk-manager-285.html" },
+            { id: 286, title: "Six Sigma Consultant", company: "Quality Masters", location: "Stevensland, AP", date: "2021-04-08", category: "engineer", url: "https://realpython.github.io/fake-jobs/jobs/six-sigma-consultant-286.html" },
+            { id: 287, title: "Full Stack Developer", company: "All Code", location: "Reyesstad, AE", date: "2021-04-08", category: "developer", url: "https://realpython.github.io/fake-jobs/jobs/full-stack-developer-287.html" },
+            { id: 288, title: "Ultrasound Technician", company: "Imaging Solutions", location: "Bellberg, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/ultrasound-technician-288.html" },
+            { id: 289, title: "Marketing Planner", company: "Brand Strategy", location: "North Johnland, AE", date: "2021-04-08", category: "media", url: "https://realpython.github.io/fake-jobs/jobs/marketing-planner-289.html" },
+            { id: 290, title: "Python Team Lead", company: "Code Leaders", location: "Martinezburgh, AE", date: "2021-04-08", category: "python", url: "https://realpython.github.io/fake-jobs/jobs/python-team-lead-290.html" },
+            { id: 291, title: "Quantity Surveyor", company: "Cost Control", location: "Joshuatown, AE", date: "2021-04-08", category: "surveying", url: "https://realpython.github.io/fake-jobs/jobs/quantity-surveyor-291.html" },
+            { id: 292, title: "Regulatory Affairs Manager", company: "Compliance Pro", location: "West Ericstad, AA", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/regulatory-affairs-manager-292.html" },
+            { id: 293, title: "Digital Archivist", company: "Info Preserve", location: "Tuckertown, AE", date: "2021-04-08", category: "education", url: "https://realpython.github.io/fake-jobs/jobs/digital-archivist-293.html" },
+            { id: 294, title: "Criminal Defense Attorney", company: "Justice Defenders", location: "Perezton, AE", date: "2021-04-08", category: "legal", url: "https://realpython.github.io/fake-jobs/jobs/criminal-defense-attorney-294.html" },
+            { id: 295, title: "Artifact Conservator", company: "Museum Care", location: "Lake Abigail, AE", date: "2021-04-08", category: "arts", url: "https://realpython.github.io/fake-jobs/jobs/artifact-conservator-295.html" },
+            { id: 296, title: "CT Scan Technologist", company: "Advanced Imaging", location: "Jacobshire, AP", date: "2021-04-08", category: "medical", url: "https://realpython.github.io/fake-jobs/jobs/ct-scan-technologist-296.html" },
+            { id: 297, title: "NoSQL Administrator", company: "Big Data Pro", location: "Port Susan, AE", date: "2021-04-08", category: "data", url: "https://realpython.github.io/fake-jobs/jobs/nosql-administrator-297.html" },
+            { id: 298, title: "Landscape Designer", company: "Green Spaces", location: "North Tiffany, AA", date: "2021-04-08", category: "design", url: "https://realpython.github.io/fake-jobs/jobs/landscape-designer-298.html" },
+            { id: 299, title: "Port Operations Manager", company: "Harbor Control", location: "Michelleville, AP", date: "2021-04-08", category: "maritime", url: "https://realpython.github.io/fake-jobs/jobs/port-operations-manager-299.html" }
+        ];
+
+        // Combine all jobs
+        const jobsData = [...originalJobs, ...additionalJobs];
+        
+        let filteredJobs = [...jobsData];
+        let currentPage = 1;
+        const jobsPerPage = 12;
+        let currentFilter = 'all';
+        let currentSort = 'newest';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            populateLocationFilter();
+            updateStats();
+            renderJobs();
+            renderLocationSummary();
+            setupEventListeners();
+        });
+
+        function populateLocationFilter() {
+            const locations = [...new Set(jobsData.map(job => job.location.split(',')[0].trim()))].sort();
+            const select = document.getElementById('locationFilter');
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                select.appendChild(option);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalJobs').textContent = jobsData.length;
+            document.getElementById('totalCompanies').textContent = new Set(jobsData.map(j => j.company)).size;
+            document.getElementById('totalLocations').textContent = new Set(jobsData.map(j => j.location.split(',')[0])).size;
+            document.getElementById('pythonJobs').textContent = jobsData.filter(j => 
+                j.title.toLowerCase().includes('python') || j.category === 'python'
+            ).length;
+        }
+
+        function renderLocationSummary() {
+            const locationCount = {};
+            jobsData.forEach(job => {
+                const city = job.location.split(',')[0].trim();
+                locationCount[city] = (locationCount[city] || 0) + 1;
+            });
+
+            const container = document.getElementById('locationSummary');
+            const sortedLocations = Object.entries(locationCount).sort((a, b) => b[1] - a[1]);
+            
+            container.innerHTML = sortedLocations.map(([location, count]) => `
+                <div class="location-card">
+                    <div class="location-count">${count}</div>
+                    <div class="location-name">${location}</div>
+                    <small>jobs available</small>
+                </div>
+            `).join('');
+        }
+
+        function renderJobs() {
+            const container = document.getElementById('jobsContainer');
+            const emptyState = document.getElementById('emptyState');
+            const start = (currentPage - 1) * jobsPerPage;
+            const end = start + jobsPerPage;
+            const jobsToShow = filteredJobs.slice(start, end);
+
+            if (jobsToShow.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                updatePagination(0);
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = jobsToShow.map((job, index) => `
+                <div class="column is-half fade-in" style="animation-delay: ${index * 0.05}s">
+                    <div class="card job-card" onclick="openModal(${job.id})">
+                        <div class="card-content">
+                            <div class="media">
+                                <div class="media-left">
+                                    <figure class="image is-48x48">
+                                        <img src="https://files.realpython.com/media/real-python-logo-thumbnail.7f0db70c2ed2.jpg" 
+                                             alt="${job.company}" 
+                                             style="border-radius: 8px;">
+                                    </figure>
+                                </div>
+                                <div class="media-content" style="min-width: 0;">
+                                    <h2 class="title is-5 mb-2">${job.title}</h2>
+                                    <div class="company-badge mb-2">
+                                        <i class="fas fa-building"></i>
+                                        ${job.company}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="content mt-4">
+                                <p class="location-tag mb-3">
+                                    <i class="fas fa-map-marker-alt has-text-primary"></i>
+                                    ${job.location}
+                                </p>
+                                <div class="level is-mobile mt-3">
+                                    <div class="level-left">
+                                        <span class="tag is-light">
+                                            <i class="far fa-calendar-alt mr-1"></i>
+                                            ${job.date}
+                                        </span>
+                                        <span class="tag is-info is-light">${job.category}</span>
+                                        ${job.id >= 100 ? '<span class="tag is-success is-light">New</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <footer class="card-footer" style="border-top: 1px solid #f0f0f0; margin-top: 1rem;">
+                                <a href="https://www.realpython.com" target="_blank" 
+                                   class="card-footer-item has-text-primary" 
+                                   onclick="event.stopPropagation()">
+                                    <i class="fas fa-graduation-cap mr-2"></i>Learn
+                                </a>
+                                <a href="${job.url}" target="_blank" 
+                                   class="card-footer-item has-text-success" 
+                                   onclick="event.stopPropagation()">
+                                    <i class="fas fa-paper-plane mr-2"></i>Apply
+                                </a>
+                            </footer>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateResultCount();
+            updatePagination(Math.ceil(filteredJobs.length / jobsPerPage));
+        }
+
+        function updateResultCount() {
+            const count = filteredJobs.length;
+            document.getElementById('resultCount').textContent = 
+                count === jobsData.length ? `Showing all ${jobsData.length} jobs` : `Showing ${count} of ${jobsData.length} jobs`;
+        }
+
+        function updatePagination(totalPages) {
+            const paginationList = document.getElementById('paginationList');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+            let html = '';
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<li><button class="pagination-link" onclick="goToPage(1)">1</button></li>`;
+                if (startPage > 2) html += '<li><span class="pagination-ellipsis">&hellip;</span></li>';
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li>
+                        <button class="pagination-link ${i === currentPage ? 'is-current' : ''}" 
+                                onclick="goToPage(${i})">${i}</button>
+                    </li>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += '<li><span class="pagination-ellipsis">&hellip;</span></li>';
+                html += `<li><button class="pagination-link" onclick="goToPage(${totalPages})">${totalPages}</button></li>`;
+            }
+
+            paginationList.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderJobs();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterJobs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const location = document.getElementById('locationFilter').value;
+
+            filteredJobs = jobsData.filter(job => {
+                const matchesSearch = !searchTerm || 
+                    job.title.toLowerCase().includes(searchTerm) || 
+                    job.company.toLowerCase().includes(searchTerm) ||
+                    job.location.toLowerCase().includes(searchTerm);
+                
+                const matchesLocation = !location || job.location.includes(location);
+                
+                let matchesFilter = true;
+                if (currentFilter === 'python') {
+                    matchesFilter = job.title.toLowerCase().includes('python');
+                } else if (currentFilter === 'developer') {
+                    matchesFilter = job.title.toLowerCase().includes('developer') || 
+                                   job.category === 'developer';
+                } else if (currentFilter === 'engineer') {
+                    matchesFilter = job.title.toLowerCase().includes('engineer') || 
+                                   job.category === 'engineer';
+                }
+
+                return matchesSearch && matchesLocation && matchesFilter;
+            });
+
+            sortJobs();
+            currentPage = 1;
+            renderJobs();
+        }
+
+        function sortJobs() {
+            if (currentSort === 'company') {
+                filteredJobs.sort((a, b) => a.company.localeCompare(b.company));
+            } else if (currentSort === 'title') {
+                filteredJobs.sort((a, b) => a.title.localeCompare(b.title));
+            } else {
+                // Newest first (by ID, higher = newer)
+                filteredJobs.sort((a, b) => b.id - a.id);
+            }
+        }
+
+        function setupEventListeners() {
+            // Search
+            document.getElementById('searchInput').addEventListener('input', debounce(filterJobs, 300));
+            
+            // Location filter
+            document.getElementById('locationFilter').addEventListener('change', filterJobs);
+            
+            // Category filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('is-active'));
+                    this.classList.add('is-active');
+                    currentFilter = this.dataset.filter;
+                    filterJobs();
+                });
+            });
+            
+            // Sort buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('is-active', 'is-primary'));
+                    this.classList.add('is-active', 'is-primary');
+                    currentSort = this.dataset.sort;
+                    filterJobs();
+                });
+            });
+            
+            // Pagination
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) goToPage(currentPage - 1);
+            });
+            
+            document.getElementById('nextPage').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+                if (currentPage < totalPages) goToPage(currentPage + 1);
+            });
+            
+            // Modal
+            document.querySelector('.modal-background').addEventListener('click', closeModal);
+            document.querySelector('.modal .delete').addEventListener('click', closeModal);
+            document.querySelector('.modal-card-foot .button:first-child').addEventListener('click', closeModal);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function openModal(jobId) {
+            const job = jobsData.find(j => j.id === jobId);
+            if (!job) return;
+
+            document.getElementById('modalTitle').textContent = job.title;
+            document.getElementById('modalCompany').textContent = job.company;
+            document.getElementById('modalLocation').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${job.location}`;
+            document.getElementById('modalDate').textContent = job.date;
+            document.getElementById('modalApply').href = job.url;
+            
+            // Customize description based on job category
+            const descriptions = {
+                python: "Join our team of Python experts working on cutting-edge web applications, data processing pipelines, and automation tools. You'll collaborate with cross-functional teams to build scalable solutions using Django, Flask, FastAPI, and modern Python ecosystem tools.",
+                engineer: "Apply your engineering expertise to solve complex technical challenges. You'll be involved in designing, testing, and implementing solutions that meet industry standards and exceed client expectations.",
+                medical: "Make a difference in patients' lives by joining our healthcare team. You'll work in a state-of-the-art facility with the latest medical technologies and a supportive multidisciplinary team.",
+                design: "Unleash your creativity in a collaborative environment. You'll work on diverse projects ranging from digital interfaces to physical products, bringing innovative ideas to life.",
+                media: "Join our dynamic media team to create compelling content across multiple platforms. You'll have the opportunity to work on exciting projects from concept to final delivery.",
+                finance: "Navigate the fast-paced world of finance with our expert team. You'll analyze markets, manage portfolios, and provide strategic financial guidance to clients.",
+                science: "Contribute to groundbreaking research in our well-equipped laboratories. You'll collaborate with leading scientists and have access to cutting-edge research tools.",
+                education: "Shape the future by educating the next generation. You'll develop curriculum, mentor students, and create engaging learning experiences.",
+                developer: "Build the future of software with our development team. You'll work with modern tech stacks, agile methodologies, and continuous deployment pipelines."
+            };
+
+            const defaultDesc = "This is an excellent opportunity to advance your career with a leading organization. You'll work in a collaborative environment that fosters innovation and professional growth.";
+            
+            document.getElementById('modalDescription').textContent = descriptions[job.category] || defaultDesc;
+            
+            document.getElementById('jobModal').classList.add('is-active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('jobModal').classList.remove('is-active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+<footer class="footer" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: 3rem; padding: 2rem 1.5rem;">
+    <div class="content has-text-centered">
+        <p class="has-text-white">
+            <strong class="has-text-primary">Fake Python Job Board</strong> &copy; 2026 All Rights Reserved.
+        </p>
+        <p class="has-text-white-bis is-size-7">
+            Made with <i class="fas fa-heart has-text-danger"></i> by <strong>-AMANXR</strong>
+        </p>
+        <p class="mt-2">
+            <a href="https://github.com/xraman-71/fake-job-board" class="has-text-white mr-3"><i class="fab fa-github"></i></a>
+            <a href="https://linkedin.com/in/yourprofile" class="has-text-white mr-3"><i class="fab fa-linkedin"></i></a>
+            <a href="https://twitter.com/yourhandle" class="has-text-white"><i class="fab fa-twitter"></i></a>
+        </p>
+    </div>
+</footer>
+</body>
+</html>
